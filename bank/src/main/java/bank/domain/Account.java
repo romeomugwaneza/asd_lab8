@@ -56,4 +56,11 @@ public class Account {
 		return entryList;
 	}
 
+	@Override
+	public String toString() {
+		return "Account{" +
+				"accountnumber=" + accountnumber +
+				", customer=" + customer +
+				'}';
+	}
 }

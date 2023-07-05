@@ -1,57 +1,66 @@
 package bank.service;
 
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 
 import bank.dao.AccountDAO;
 import bank.dao.IAccountDAO;
 import bank.domain.Account;
 import bank.domain.Customer;
+import bank.domain.proxies.LoggingProxy;
+import bank.domain.proxies.StopWatchProxy;
 
 
 public class AccountService implements IAccountService {
-	private IAccountDAO accountDAO;
-
-	
-	public AccountService(){
-		accountDAO=new AccountDAO();
-	}
+	IAccountDAO accountDAO = new AccountDAO();
+	ClassLoader classLoader = AccountDAO.class.getClassLoader();
+	IAccountDAO loggingProxy = (IAccountDAO) Proxy.newProxyInstance(
+			classLoader,
+			new Class[] {IAccountDAO.class},
+			new LoggingProxy(accountDAO)
+	);
+	IAccountDAO stopWatchProxy = (IAccountDAO) Proxy.newProxyInstance(
+			classLoader,
+			new Class[] {IAccountDAO.class},
+			new StopWatchProxy(loggingProxy)
+	);
 
 	public Account createAccount(long accountNumber, String customerName) {
 		Account account = new Account(accountNumber);
 		Customer customer = new Customer(customerName);
 		account.setCustomer(customer);
-		accountDAO.saveAccount(account);
+		stopWatchProxy.saveAccount(account);
 		return account;
 	}
 
 	public void deposit(long accountNumber, double amount) {
-		Account account = accountDAO.loadAccount(accountNumber);
+		Account account = stopWatchProxy.loadAccount(accountNumber);
 		account.deposit(amount);
-		accountDAO.updateAccount(account);
+		stopWatchProxy.updateAccount(account);
 	}
 
 	public Account getAccount(long accountNumber) {
-		Account account = accountDAO.loadAccount(accountNumber);
+		Account account = stopWatchProxy.loadAccount(accountNumber);
 		return account;
 	}
 
 	public Collection<Account> getAllAccounts() {
-		return accountDAO.getAccounts();
+		return stopWatchProxy.getAccounts();
 	}
 
 	public void withdraw(long accountNumber, double amount) {
-		Account account = accountDAO.loadAccount(accountNumber);
+		Account account = stopWatchProxy.loadAccount(accountNumber);
 		account.withdraw(amount);
-		accountDAO.updateAccount(account);
+		stopWatchProxy.updateAccount(account);
 	}
 
 
 
 	public void transferFunds(long fromAccountNumber, long toAccountNumber, double amount, String description) {
-		Account fromAccount = accountDAO.loadAccount(fromAccountNumber);
-		Account toAccount = accountDAO.loadAccount(toAccountNumber);
+		Account fromAccount = stopWatchProxy.loadAccount(fromAccountNumber);
+		Account toAccount = stopWatchProxy.loadAccount(toAccountNumber);
 		fromAccount.transferFunds(toAccount, amount, description);
-		accountDAO.updateAccount(fromAccount);
-		accountDAO.updateAccount(toAccount);
+		stopWatchProxy.updateAccount(fromAccount);
+		stopWatchProxy.updateAccount(toAccount);
 	}
 }

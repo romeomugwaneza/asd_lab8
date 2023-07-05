@@ -1,10 +1,11 @@
 package bank;
 
+import java.lang.reflect.Proxy;
 import java.util.Collection;
-
 import bank.domain.Account;
 import bank.domain.AccountEntry;
 import bank.domain.Customer;
+import bank.domain.proxies.StopWatchProxy;
 import bank.service.AccountService;
 import bank.service.IAccountService;
 
@@ -13,19 +14,25 @@ import bank.service.IAccountService;
 public class Application {
 	public static void main(String[] args) {
 		IAccountService accountService = new AccountService();
+		ClassLoader classLoader = IAccountService.class.getClassLoader();
+		IAccountService stopWatchProxy = (IAccountService) Proxy.newProxyInstance(
+				classLoader,
+				new Class[] {IAccountService.class},
+				new StopWatchProxy(accountService)
+		);
 		// create 2 accounts;
-		accountService.createAccount(1263862, "Frank Brown");
-		accountService.createAccount(4253892, "John Doe");
+		stopWatchProxy.createAccount(1263862, "Frank Brown");
+		stopWatchProxy.createAccount(4253892, "John Doe");
 		//use account 1;
-		accountService.deposit(1263862, 240);
-		accountService.deposit(1263862, 529);
-		accountService.withdraw(1263862, 230);
+		stopWatchProxy.deposit(1263862, 240);
+		stopWatchProxy.deposit(1263862, 529);
+		stopWatchProxy.withdraw(1263862, 230);
 		//use account 2;
-		accountService.deposit(4253892, 12450);
-		accountService.transferFunds(4253892, 1263862, 100, "payment of invoice 10232");
+		stopWatchProxy.deposit(4253892, 12450);
+		stopWatchProxy.transferFunds(4253892, 1263862, 100, "payment of invoice 10232");
 		// show balances
 		
-		Collection<Account> accountlist = accountService.getAllAccounts();
+		Collection<Account> accountlist = stopWatchProxy.getAllAccounts();
 		Customer customer = null;
 		for (Account account : accountlist) {
 			customer = account.getCustomer();
